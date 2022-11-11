@@ -1,4 +1,5 @@
 import { GetStaticProps, GetStaticPaths, NextPage } from 'next'
+import { redirect } from 'next/dist/server/api-utils';
 
 import { pokeApi } from '../../api';
 import { PokemonDetails } from '../../components/pokemon';
@@ -25,7 +26,8 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
         paths: results.map((poke, index) => ({
             params: { id: `${ index + 1 }` }
         })),
-        fallback: false
+        // fallback: false
+        fallback: 'blocking',
     }
 }
 
@@ -34,12 +36,21 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
     const { id } = params as {id: string}
 
     const pokemon = await getPokeDetails(id)
-  
+
+    if ( !pokemon ) {
+      return {
+        redirect: {
+          destination: '/',
+          permanent: false
+        }
+      }
+    }
 
     return {
       props: {
-        pokemon,
-      }
+        pokemon
+      },
+      revalidate: 86400,
     }
   }
 
